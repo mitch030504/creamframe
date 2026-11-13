@@ -28,7 +28,12 @@ games, Android games through Lepton, and Windows games through Proton.
   modern SDKs (including the Android one) no longer export the latter.
 - `ssh steamos@frame` is the default remote; see [docs/frame.md](docs/frame.md).
 
-Quick start:
+The fastest path is the GUI installer:
+[mitch030504/creamframe-installer](https://github.com/mitch030504/creamframe-installer).
+It handles local Linux games, remote Steam Frame management and on-device
+Android APK patching.
+
+CLI quick start:
 
 ```sh
 ssh steamos@frame                                  # Developer Mode SSH
@@ -40,8 +45,11 @@ python3 tools/frame.py android revert 1408230
 python3 tools/frame.py proton install 620980 --smokeapi-mode proxy
 ```
 
-The GUI installer for local Linux and Steam Frame lives at
-[mitch030504/creamframe-installer](https://github.com/mitch030504/creamframe-installer).
+Validation so far: Walkabout Mini Golf (1408230) unlocks 30 DLC entries in its
+patched APK and the APK reverts byte-for-byte; UNDERDOGS (2441700) exposes its
+4 DLC IDs but its base game hit a Steam license error on the test device; Beat
+Saber (620980) is proxied but still needs the Steam EULA accepted in the
+headset. See [docs/frame.md](docs/frame.md#validation-status).
 
 The Android path changes the app signature (Steam still updates the APK file
 normally), backs up the original as `<apk>.cream-backup`, and may require the

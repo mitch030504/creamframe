@@ -39,7 +39,10 @@ Hostname** if you have more than one. `tools/frame.py` defaults to
 - Android NDK r30 for `./build-android.sh` (defaults to `/opt/android-ndk`,
   override with `ANDROID_NDK_HOME`)
 
-`python3 tools/frame.py doctor` checks all of these.
+`python3 tools/frame.py doctor` checks all of these. The GUI installer bundles a
+Temurin JRE, `apksigner.jar`, the Android proxy and the `frame.py` tooling, so
+on-device patching does not need a full Android SDK; see the portable mode
+below.
 
 ## Android games
 
@@ -88,6 +91,20 @@ Lepton's baked app directory (`compatdata/<appid>/baked/app_overlay`) is
 temporary: it is removed on normal container teardown. Patching the APK is the
 only location that survives that lifecycle while still letting Steam own the
 game files. The original APK is always backed up.
+
+### Validation status
+
+- **Walkabout Mini Golf (1408230)**: patched and launched on a Steam Frame;
+  the game reported 30 DLC entries, and `android revert` restored the original
+  APK SHA-256.
+- **UNDERDOGS (2441700)**: the proxy reports its 4 DLC IDs, but the base game
+  failed its own Steam license check (`AppError_5`) on the test device.
+- **Beat Saber (620980)**: the SmokeAPI/Proton proxy is installed; the first
+  launch waits at Steam's EULA dialog, so it needs a user to accept that in the
+  headset before it can be confirmed.
+- **Portable Frame-local patch**: `frame.py --local android patch` and
+  `revert` were exercised on the Frame using the installer's bundled JRE and
+  `apksigner.jar`; installing an APK without `zipalign` launched successfully.
 
 The proxy is a real Android shared library named `libsteam_api.so`; the original
 is renamed to `libsteam_api_orig.so`. It is built with bionic/NDK, statically
