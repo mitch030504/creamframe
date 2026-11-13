@@ -80,11 +80,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: android-actions/setup-android@v3
       - name: Install NDK
         run: |
-          sdkmanager "ndk;30.0.16248370"
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/30.0.16248370" >> "$GITHUB_ENV"
+          curl -fsSL -o /tmp/android-ndk-r30.zip \
+            https://dl.google.com/android/repository/android-ndk-r30-linux.zip
+          unzip -q /tmp/android-ndk-r30.zip -d "$RUNNER_TEMP"
+          echo "ANDROID_NDK_HOME=$RUNNER_TEMP/android-ndk-r30" >> "$GITHUB_ENV"
       - name: Build Android proxy
         run: |
           chmod +x ./build-android.sh
