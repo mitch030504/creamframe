@@ -94,7 +94,7 @@ def default_keystore_dir() -> Path:
     return Path(base) / "creamframe"
 
 
-def ensure_keystore(keystore: str, password_file: str) -> None:
+def ensure_keystore(keystore: str, password_file: str, keytool: str | None = None) -> None:
     ks = Path(keystore)
     pw = Path(password_file)
     if ks.exists():
@@ -111,9 +111,9 @@ def ensure_keystore(keystore: str, password_file: str) -> None:
             die(f"password file is empty: {pw}")
         return
 
-    keytool = which("keytool")
+    keytool = keytool or which("keytool")
     if not keytool:
-        die("keytool not found (install a JDK)")
+        die("keytool not found (install a JDK or pass CREAMFRAME_KEYTOOL)")
     ks.parent.mkdir(parents=True, exist_ok=True)
     pw.parent.mkdir(parents=True, exist_ok=True)
     password = secrets.token_urlsafe(24)
@@ -149,12 +149,23 @@ def extract_original(apk: str) -> bytes:
 
 
 def patch_apk(apk: str, proxy: str, ini: str, output: str,
-              keystore: str, password_file: str) -> None:
-    ensure_keystore(keystore, password_file)
+              keystore: str, password_file: str, *,
+              zipalign_enabled: bool = True, sign_enabled: bool = True,
+              apksigner_jar: str | None = None, java: str | None = None,
+              keytool: str | None = None) -> None:
+    if sign_enabled:
+        ensure_keystore(keystore, password_file, keytool=keytool)
     zip_tool = tool("zip")
-    unzip_tool = tool("unzip")  # noqa: F841 - validates availability
-    zipalign = tool("zipalign")
-    apksigner = tool("apksigner")
+    tool("unzip")  # validates availability
+    zipalign = tool("zipalign") if zipalign_enabled else None
+    if sign_enabled:
+        if apksigner_jar:
+            apksigner = None
+            java = java or tool("java")
+        else:
+            apksigner = tool("apksigner")
+    else:
+        apksigner = None
 
     original = extract_original(apk)
     proxy_bytes = append_config(proxy, ini)
@@ -181,32 +192,49 @@ def patch_apk(apk: str, proxy: str, ini: str, output: str,
         run([zip_tool, "-q", "-0", str(unsigned),
              LIB_ENTRY, ORIG_ENTRY], cwd=str(stage))
 
-        aligned = Path(work) / "aligned.apk"
-        result = subprocess.run([zipalign, "-P", "16", "-f", "4",
-                                 str(unsigned), str(aligned)],
-                                text=True, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        if result.returncode != 0:
-            # Older zipalign versions do not understand -P 16.
-            result = subprocess.run([zipalign, "-p", "-f", "4",
+        if zipalign_enabled:
+            aligned = Path(work) / "aligned.apk"
+            result = subprocess.run([zipalign, "-P", "16", "-f", "4",
                                      str(unsigned), str(aligned)],
                                     text=True, stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
-        if result.returncode != 0:
-            die(f"zipalign failed: {result.stderr.strip()}")
+            if result.returncode != 0:
+                # Older zipalign versions do not understand -P 16.
+                result = subprocess.run([zipalign, "-p", "-f", "4",
+                                         str(unsigned), str(aligned)],
+                                        text=True, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
+            if result.returncode != 0:
+                die(f"zipalign failed: {result.stderr.strip()}")
+        else:
+            aligned = unsigned
+
+        if not sign_enabled:
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(aligned, output)
+            return
 
         signed = Path(work) / "signed.apk"
-        sign_result = subprocess.run([
-            apksigner, "sign",
+        if apksigner_jar:
+            sign_cmd = [java, "-jar", apksigner_jar, "sign"]
+        else:
+            sign_cmd = [apksigner, "sign"]
+        sign_cmd += [
             "--ks", keystore,
             "--ks-key-alias", "cream",
             "--ks-pass", f"file:{password_file}",
             "--key-pass", f"file:{password_file}",
             "--out", str(signed), str(aligned),
-        ], text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ]
+        sign_result = subprocess.run(sign_cmd, text=True,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE)
         if sign_result.returncode != 0:
             die(f"apksigner failed: {sign_result.stderr.strip()}")
-        verify = run([apksigner, "verify", "--verbose", str(signed)], capture=True)
+        if apksigner_jar:
+            verify = run([java, "-jar", apksigner_jar, "verify", "--verbose", str(signed)], capture=True)
+        else:
+            verify = run([apksigner, "verify", "--verbose", str(signed)], capture=True)
         if "Verified using v2 scheme" not in (verify.stdout or "") and \
            "Verified using v3 scheme" not in (verify.stdout or ""):
             print(verify.stdout or "", file=sys.stderr)
@@ -226,10 +254,20 @@ def main() -> int:
     ap.add_argument("--output", required=True, help="patched APK to write")
     ap.add_argument("--keystore", default=str(default_keystore_dir() / "android.keystore"))
     ap.add_argument("--password-file", default=str(default_keystore_dir() / "android.keystore.pass"))
+    ap.add_argument("--skip-zipalign", action="store_true",
+                    help="portable/SteamOS mode; useful when no zipalign binary exists")
+    ap.add_argument("--skip-sign", action="store_true")
+    ap.add_argument("--apksigner-jar", help="use java -jar apksigner.jar (portable)")
+    ap.add_argument("--java", help="java executable for --apksigner-jar")
+    ap.add_argument("--keytool", help="keytool executable for keystore generation")
     args = ap.parse_args()
 
     patch_apk(args.apk, args.proxy, args.ini, args.output,
-              args.keystore, args.password_file)
+              args.keystore, args.password_file,
+              zipalign_enabled=not args.skip_zipalign,
+              sign_enabled=not args.skip_sign,
+              apksigner_jar=args.apksigner_jar,
+              java=args.java, keytool=args.keytool)
     print(f"patched APK written to {args.output}")
     return 0
 

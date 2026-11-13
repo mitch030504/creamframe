@@ -40,6 +40,9 @@ python3 tools/frame.py android revert 1408230
 python3 tools/frame.py proton install 620980 --smokeapi-mode proxy
 ```
 
+The GUI installer for local Linux and Steam Frame lives at
+[mitch030504/creamframe-installer](https://github.com/mitch030504/creamframe-installer).
+
 The Android path changes the app signature (Steam still updates the APK file
 normally), backs up the original as `<apk>.cream-backup`, and may require the
 game's Lepton container to re-bake on the first launch. Back up local saves or

@@ -101,6 +101,33 @@ through `DT_NEEDED: libsteam_api_orig.so`. The DLC list is appended as:
 The ELF loader ignores the trailing data. This avoids adding a non-`.so` file to
 `lib/arm64-v8a`, which Android does not extract.
 
+## Portable / Frame-local mode
+
+`frame.py` can operate on the machine it runs on instead of an SSH remote:
+
+```sh
+python3 tools/frame.py --local doctor
+python3 tools/frame.py --local scan
+python3 tools/frame.py --local android patch 1408230
+```
+
+For a fully self-contained Android patch on Steam Frame/ARM64, point the
+patcher at a JDK and `apksigner.jar`; `zipalign` is skipped in portable mode:
+
+```sh
+export CREAMFRAME_ANDROID_PROXY="$PWD/build/android/lib/libsteam_api.so"
+export CREAMFRAME_APKSIGNER_JAR="$PWD/apksigner.jar"
+export CREAMFRAME_JAVA="$PWD/jdk/bin/java"
+export CREAMFRAME_KEYTOOL="$PWD/jdk/bin/keytool"
+export CREAMFRAME_NO_ZIPALIGN=1
+python3 tools/frame.py --local android patch 1408230
+```
+
+The portable path was validated on a Steam Frame with an aarch64 Temurin JRE
+and `apksigner.jar`; it installs and launches the patched Walkabout Mini Golf
+APK. `zipalign` is not required for that APK; desktop builds should still use
+the normal zipalign path when available.
+
 ## Native ARM64 games
 
 ```sh
