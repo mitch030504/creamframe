@@ -48,8 +48,9 @@ python3 tools/frame.py proton install 620980 --smokeapi-mode proxy
 Validation so far: Walkabout Mini Golf (1408230) unlocks 30 DLC entries in its
 patched APK and the APK reverts byte-for-byte; UNDERDOGS (2441700) exposes its
 4 DLC IDs but its base game hit a Steam license error on the test device; Beat
-Saber (620980) is proxied but still needs the Steam EULA accepted in the
-headset. See [docs/frame.md](docs/frame.md#validation-status).
+Saber (620980) launches with the SmokeAPI proxy after accepting Steam's
+one-time EULA dialog in the headset. See
+[docs/frame.md](docs/frame.md#validation-status).
 
 The Android path changes the app signature (Steam still updates the APK file
 normally), backs up the original as `<apk>.cream-backup`, and may require the

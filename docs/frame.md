@@ -99,9 +99,9 @@ game files. The original APK is always backed up.
   APK SHA-256.
 - **UNDERDOGS (2441700)**: the proxy reports its 4 DLC IDs, but the base game
   failed its own Steam license check (`AppError_5`) on the test device.
-- **Beat Saber (620980)**: the SmokeAPI/Proton proxy is installed; the first
-  launch waits at Steam's EULA dialog, so it needs a user to accept that in the
-  headset before it can be confirmed.
+- **Beat Saber (620980)**: the SmokeAPI/Proton proxy is installed and the game
+  launches after accepting Steam's one-time EULA dialog in the headset. DLC
+  unlock confirmation is still pending.
 - **Portable Frame-local patch**: `frame.py --local android patch` and
   `revert` were exercised on the Frame using the installer's bundled JRE and
   `apksigner.jar`; installing an APK without `zipalign` launched successfully.
@@ -197,8 +197,8 @@ init, and `BIsDlcInstalled unlocked <id>` responses.
   launch the base game (`AppError_5`, license check), so the APK patch was
   reverted after the Android proxy self-test.
 - **Beat Saber** (Proton, 620980): SmokeAPI proxy installed into
-  `Beat Saber_Data/Plugins/x86_64`; launch was waiting on Steam's EULA dialog
-  at the time of writing.
+  `Beat Saber_Data/Plugins/x86_64`; the game launches after accepting Steam's
+  one-time EULA dialog in the headset.
 
 ## Troubleshooting
 
