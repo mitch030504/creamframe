@@ -1,0 +1,21 @@
+{
+  global:
+    SteamAPI_Init;
+    SteamAPI_InitFlat;
+    SteamAPI_InitSafe;
+    SteamInternal_SteamAPI_Init;
+    SteamInternal_CreateInterface;
+    SteamInternal_FindOrCreateUserInterface;
+    SteamInternal_ContextInit;
+    SteamAPI_ISteamApps_GetDLCCount;
+    SteamAPI_ISteamApps_BIsDlcInstalled;
+    SteamAPI_ISteamApps_BIsSubscribedApp;
+    SteamAPI_ISteamApps_BGetDLCDataByIndex;
+    SteamAPI_ISteamUser_UserHasLicenseForApp;
+    SteamApps;
+    SteamUser;
+    SteamClient;
+    CreateInterface;
+  local:
+    *;
+};

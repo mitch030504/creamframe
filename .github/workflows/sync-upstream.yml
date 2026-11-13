@@ -1,8 +1,7 @@
 name: Sync cream_api.ini from upstream
 
 # Keeps the DLC list fresh: every Monday (and on manual trigger) pulls the
-# latest package/cream_api.ini from anticitizn/creamlinux (the upstream the
-# community keeps updating) and commits it if it changed.
+# latest package/cream_api.ini from gongarn/creamlinux and commits it if it changed.
 on:
   schedule:
     - cron: "0 3 * * 1" # every Monday 03:00 UTC
@@ -20,7 +19,7 @@ jobs:
       - name: Download upstream cream_api.ini
         run: |
           curl -fsSL -o /tmp/upstream_cream_api.ini \
-            https://raw.githubusercontent.com/anticitizn/creamlinux/master/package/cream_api.ini
+            https://raw.githubusercontent.com/gongarn/creamlinux/master/package/cream_api.ini
 
       - name: Compare with current list
         id: compare

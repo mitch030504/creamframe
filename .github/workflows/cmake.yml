@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       releaseTag:
-        description: 'Release tag (e.g. v2.3.0). Leave empty to skip the release'
+        description: 'Release tag (e.g. v2.4.0). Leave empty to skip the release'
         required: false
         default: ''
       releaseName:
@@ -23,63 +23,122 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  linux-x86:
     runs-on: ubuntu-latest
     container:
       image: ubuntu:22.04
-
     steps:
-    - name: Install build deps
-      run: |
-        apt-get update
-        apt-get install -y --no-install-recommends ca-certificates build-essential gcc-multilib g++-multilib cmake git zip python3 gh
+      - name: Install build deps
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates \
+            build-essential gcc-multilib g++-multilib cmake git zip python3
+      - uses: actions/checkout@v4
+      - name: Build 32-bit and 64-bit
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+      - name: Assert glibc compatibility (<= 2.35)
+        run: |
+          maxver=$(objdump -T output/lib64Creamlinux.so output/lib32Creamlinux.so \
+            | grep -oE 'GLIBC_2\.[0-9]+' | sort -uV | tail -1)
+          echo "max required: $maxver"
+          case "$maxver" in
+            GLIBC_2.2[0-9]|GLIBC_2.3[0-5]) ;;
+            *) echo "::error::glibc requirement exceeds 2.35 ($maxver)"; exit 1 ;;
+          esac
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/build/64
+        run: ctest --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86
+          path: ${{ github.workspace }}/output
 
-    - uses: actions/checkout@v4
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates build-essential cmake git zip python3
+      - uses: actions/checkout@v4
+      - name: Build ARM64
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+      - name: Run tests
+        working-directory: ${{ github.workspace }}/build/arm64
+        run: ctest --output-on-failure
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64
+          path: ${{ github.workspace }}/output
 
-    - name: Build 32-bit and 64-bit
-      run: |
-        chmod +x ./build.sh
-        ./build.sh
-      shell: bash
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: android-actions/setup-android@v3
+      - name: Install NDK
+        run: |
+          sdkmanager "ndk;30.0.16248370"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - name: Build Android proxy
+        run: |
+          chmod +x ./build-android.sh
+          ./build-android.sh
+      - name: Check proxy exports and dependency
+        run: |
+          readelf -dW build/android/lib/libsteam_api.so | grep -q 'libsteam_api_orig.so'
+          test "$(nm -D --defined-only build/android/lib/libsteam_api.so | wc -l)" -eq 16
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: ${{ github.workspace }}/build/android/lib/libsteam_api.so
 
-    - name: Assert glibc compatibility (max required GLIBC symbol version <= 2.35)
-      run: |
-        maxver=$(objdump -T output/lib64Creamlinux.so output/lib32Creamlinux.so \
-          | grep -oE 'GLIBC_2\.[0-9]+' | sort -uV | tail -1)
-        echo "max required: $maxver"
-        case "$maxver" in
-          GLIBC_2.2[0-9]|GLIBC_2.3[0-5]) ;;   # <= 2.35 OK
-          *) echo "::error::glibc requirement exceeds 2.35 ($maxver)"; exit 1 ;;
-        esac
-      shell: bash
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax and unit tests
+        run: |
+          python3 -m py_compile tools/*.py
+          python3 -m unittest discover -s tools/tests
 
-    - name: Package artifacts
-      run: |
-        cd output
-        zip -r creamlinux.zip .
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: linux-artifacts
-        path: |
-          ${{ github.workspace }}/output
-
-    - name: Run tests
-      working-directory: ${{ github.workspace }}/build/64
-      run: ctest --output-on-failure
-
-    - name: Run Python tests and syntax checks
-      run: |
-        python3 -m py_compile tools/*.py
-        python3 -m unittest discover -s tools/tests
-
-    - name: Create GitHub Release
-      if: github.event_name == 'workflow_dispatch' && github.event.inputs.releaseTag != ''
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        gh release create "${{ github.event.inputs.releaseTag }}" \
-          --title "${{ github.event.inputs.releaseName }}" \
-          --notes "Automated build from master" \
-          output/creamlinux.zip
+  release:
+    needs: [linux-x86, linux-arm64, android, python]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.releaseTag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble universal release
+        run: |
+          set -e
+          mkdir -p release/aarch64 release/android release/tools
+          if [ -d artifacts/linux-x86/output ]; then
+            cp artifacts/linux-x86/output/* release/
+          else
+            cp artifacts/linux-x86/* release/
+          fi
+          if [ -d artifacts/linux-arm64/output ]; then
+            cp artifacts/linux-arm64/output/lib64Creamlinux.so release/aarch64/
+          else
+            cp artifacts/linux-arm64/lib64Creamlinux.so release/aarch64/
+          fi
+          cp artifacts/android/libsteam_api.so release/android/
+          cp tools/*.py release/tools/
+          cp package/cream.sh package/cream_api.ini release/
+          (cd release && zip -r ../creamlinux-steamframe.zip .)
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.event.inputs.releaseTag }}" \
+            --title "${{ github.event.inputs.releaseName || github.event.inputs.releaseTag }}" \
+            --notes "Automated Steam Frame build (x86_64/i386/aarch64/Android)" \
+            creamlinux-steamframe.zip

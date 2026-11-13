@@ -5,6 +5,43 @@ Since 20PercentRendered has archived the repo, I have decided to fork and suppor
 
 **Русская версия: [README.ru.md](README.ru.md)**
 
+## Steam Frame fork (this fork)
+This tree also targets Valve's **Steam Frame**: SteamOS on ARM64, native Linux
+games, Android games through Lepton, and Windows games through Proton.
+
+- **Native aarch64** build and an architecture-aware `cream.sh` (selects the
+  creamlinux library from the game's ELF machine, so a single release works on
+  x86-64 and Frame).
+- **Android/Lepton support** via `tools/frame.py`: the game APK is backed up,
+  patched with a `libsteam_api.so` proxy, re-signed and put back. Lepton is
+  never edited; the original APK is kept as `<apk>.cream-backup`. Steam updates
+  replace the patched APK and the patch can be reapplied. The proxy embeds the DLC list,
+  so no extra non-library file has to survive Android's APK extraction.
+- **Proton/Windows on Frame** via SmokeAPI (`frame.py proton install`).
+- **Modern Steamworks init hooks**: `SteamInternal_SteamAPI_Init()` and
+  `SteamAPI_InitFlat()` are hooked in addition to the legacy `SteamAPI_Init()`;
+  modern SDKs (including the Android one) no longer export the latter.
+- `ssh steamos@frame` is the default remote; see [docs/frame.md](docs/frame.md).
+
+Quick start:
+
+```sh
+ssh steamos@frame                                  # Developer Mode SSH
+python3 tools/frame.py doctor
+python3 tools/frame.py scan
+./build-android.sh                                 # Android proxy (NDK)
+python3 tools/frame.py android patch 1408230       # e.g. Walkabout Mini Golf
+python3 tools/frame.py android revert 1408230
+python3 tools/frame.py proton install 620980 --smokeapi-mode proxy
+```
+
+The Android path changes the app signature (Steam still updates the APK file
+normally), backs up the original as `<apk>.cream-backup`, and may require the
+game's Lepton container to re-bake on the first launch. Back up local saves or
+use Steam Cloud before the first patch. Do not use this in competitive or
+anti-cheat games. See [docs/frame.md](docs/frame.md) for the full workflow and
+caveats.
+
 ## Our improvements over upstream
 This fork (gongarn/creamlinux) adds the following on top of anticitizn/creamlinux:
 
