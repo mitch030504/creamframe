@@ -30,7 +30,7 @@ RETRIES = 3
 SLEEP_BETWEEN_REQUESTS = 0.8  # seconds, keep Steam API happy
 DRY_RUN_PREVIEW_LIMIT = 50   # max diff lines printed by --dry-run
 
-USER_AGENT = "creamlinux-update-dlc/1.0"
+USER_AGENT = "creamframe-update-dlc/1.0"
 
 
 # ---------------------------------------------------------------- http ----

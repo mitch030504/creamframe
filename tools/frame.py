@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CreamFrame: manage creamlinux on a Steam Frame over SSH.
+"""CreamFrame: manage DLC unlocking on a Steam Frame over SSH.
 
 The default remote is steamos@frame, matching the Steam Frame developer-mode
 SSH setup. No Steam or Lepton files are patched in place by the Android path:

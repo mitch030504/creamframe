@@ -1,8 +1,8 @@
 """
-creamlib.py - shared core for creamlinux tools (setup.py CLI and gui.py web UI).
+creamlib.py - shared core for CreamFrame tools (setup.py CLI and gui.py web UI).
 
 Contains everything related to: Steam library discovery, game type detection,
-unlocker installation (creamlinux for native, SmokeAPI/Koaloader for Proton),
+unlocker installation (CreamFrame for native, SmokeAPI/Koaloader for Proton),
 uninstallation, and per-game cream_api.ini editing.
 """
 
@@ -15,11 +15,11 @@ import tempfile
 import urllib.request
 import zipfile
 
-USER_AGENT = "creamlinux-setup/1.0"
+USER_AGENT = "creamframe-setup/1.0"
 
 SMOKEAPI_REPO = "acidicoala/SmokeAPI"
 KOALOADER_REPO = "acidicoala/Koaloader"
-CREAMLINUX_REPO = "gongarn/creamlinux"
+CREAMLINUX_REPO = "mitch030504/creamframe"
 
 CREAM_FILES = ["lib64Creamlinux.so", "lib32Creamlinux.so", "cream.sh",
                "cream_api.ini"]
@@ -41,11 +41,24 @@ def http_get(url, timeout=60):
 
 
 def latest_release_asset(repo):
-    """Return (asset_name, browser_download_url) of the latest release."""
+    """Return (asset_name, browser_download_url) of the latest release.
+
+    CreamFrame publishes per-architecture assets so the Tauri
+    installer and this CLI do not have to unpack nested x86/aarch64 paths.
+    """
+    import platform
     data = json.loads(http_get(f"https://api.github.com/repos/{repo}/releases/latest"))
     assets = data.get("assets") or []
     if not assets:
         raise RuntimeError(f"repo {repo} has no release assets")
+    if repo == CREAMLINUX_REPO:
+        machine = platform.machine().lower()
+        wanted = (["creamframe-aarch64.zip"] if machine in ("aarch64", "arm64")
+                  else ["creamframe.zip", "creamlinux.zip"])
+        for name in wanted:
+            for asset in assets:
+                if asset["name"] == name:
+                    return asset["name"], asset["browser_download_url"]
     asset = assets[0]
     return asset["name"], asset["browser_download_url"]
 

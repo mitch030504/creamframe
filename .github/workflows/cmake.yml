@@ -117,29 +117,38 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
-      - name: Assemble universal release
+      - name: Assemble CreamFrame release assets
         run: |
           set -e
-          mkdir -p release/aarch64 release/android release/tools
-          if [ -d artifacts/linux-x86/output ]; then
-            cp artifacts/linux-x86/output/* release/
-          else
-            cp artifacts/linux-x86/* release/
-          fi
-          if [ -d artifacts/linux-arm64/output ]; then
-            cp artifacts/linux-arm64/output/lib64Creamlinux.so release/aarch64/
-          else
-            cp artifacts/linux-arm64/lib64Creamlinux.so release/aarch64/
-          fi
-          cp artifacts/android/libsteam_api.so release/android/
-          cp tools/*.py release/tools/
-          cp package/cream.sh package/cream_api.ini release/
-          (cd release && zip -r ../creamlinux-steamframe.zip .)
+          mkdir -p release
+          if [ -d artifacts/linux-x86/output ]; then X86=artifacts/linux-x86/output; else X86=artifacts/linux-x86; fi
+          if [ -d artifacts/linux-arm64/output ]; then ARM=artifacts/linux-arm64/output; else ARM=artifacts/linux-arm64; fi
+
+          # Per-architecture archives used by creamframe-installer and the CLI.
+          (cd "$X86" && zip -q -r "$GITHUB_WORKSPACE/release/creamframe.zip" .)
+          (cd "$ARM" && zip -q -r "$GITHUB_WORKSPACE/release/creamframe-aarch64.zip" .)
+          (cd artifacts/android && zip -q "$GITHUB_WORKSPACE/release/creamframe-android.zip" libsteam_api.so)
+
+          # Compatibility alias for installations that still ask for the old name.
+          cp release/creamframe.zip release/creamlinux.zip
+
+          # Universal archive: all architectures + the frame.py tooling.
+          mkdir -p release/universal/aarch64 release/universal/android release/universal/tools
+          cp "$X86"/* release/universal/
+          cp "$ARM"/lib64Creamlinux.so release/universal/aarch64/
+          cp artifacts/android/libsteam_api.so release/universal/android/
+          cp tools/*.py release/universal/tools/
+          cp package/cream.sh package/cream_api.ini release/universal/
+          (cd release/universal && zip -q -r "$GITHUB_WORKSPACE/release/creamframe-steamframe.zip" .)
+
+          ls -lh release
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "${{ github.event.inputs.releaseTag }}" \
             --title "${{ github.event.inputs.releaseName || github.event.inputs.releaseTag }}" \
-            --notes "Automated Steam Frame build (x86_64/i386/aarch64/Android)" \
-            creamlinux-steamframe.zip
+            --notes "CreamFrame build (x86_64/i386/aarch64/Android)" \
+            release/creamframe.zip release/creamframe-aarch64.zip \
+            release/creamframe-android.zip release/creamframe-steamframe.zip \
+            release/creamlinux.zip

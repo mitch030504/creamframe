@@ -1,5 +1,5 @@
 #!/bin/bash
-# cream.sh - launch a game with creamlinux DLC unlock hooks.
+# cream.sh - launch a game with CreamFrame DLC unlock hooks.
 #
 # Usage in Steam launch options:
 #   sh ./cream.sh %command%

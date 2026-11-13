@@ -1,4 +1,4 @@
-/* creamlinux web UI - vanilla JS, no frameworks */
+/* CreamFrame web UI - vanilla JS, no frameworks */
 "use strict";
 
 let games = [];

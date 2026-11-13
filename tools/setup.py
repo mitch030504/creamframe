@@ -59,7 +59,7 @@ def cmd_install(args, game=None):
     if game["game_type"] == "native":
         dist = creamlib.find_creamlinux_dist()
         if dist is None:
-            print("error: no local creamlinux build found; run 'sh ./build.sh' "
+            print("error: no local CreamFrame build found; run 'sh ./build.sh' "
                   "first or pass --dir with a prebuilt dist", file=sys.stderr)
             return 1
         return creamlib.install_native(game["game_dir"], dist,
@@ -108,8 +108,8 @@ def cmd_install_dir(args, game_dir):
             # try the latest GitHub release of this fork
             try:
                 _, url = creamlib.latest_release_asset(creamlib.CREAMLINUX_REPO)
-                print(f"Downloading creamlinux release: {url}")
-                tmpdir = tempfile.mkdtemp(prefix="creamlinux-dist-")
+                print(f"Downloading CreamFrame release: {url}")
+                tmpdir = tempfile.mkdtemp(prefix="creamframe-dist-")
                 zip_path = os.path.join(tmpdir, "creamlinux.zip")
                 with open(zip_path, "wb") as fh:
                     fh.write(creamlib.http_get(url))
@@ -117,7 +117,7 @@ def cmd_install_dir(args, game_dir):
                     zf.extractall(tmpdir)
                 dist = tmpdir
             except Exception as exc:  # noqa: BLE001
-                print("error: no local creamlinux build found and no release "
+                print("error: no local CreamFrame build found and no release "
                       f"available to download: {exc}", file=sys.stderr)
                 print("Build it first with:  sh ./build.sh", file=sys.stderr)
                 return 1

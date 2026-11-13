@@ -1,12 +1,18 @@
-# Creamlinux
-Клон CreamAPI для Linux.
+# CreamFrame
+Клон CreamAPI для Linux, Steam Frame и Android-игр через Lepton.
+
+CreamFrame — поддерживаемое продолжение **creamlinux** (форк gongarn/creamlinux,
+изначально 20PercentRendered и anticitizn). Проект переименован в CreamFrame
+после добавления поддержки Steam Frame и Android/Lepton. Технические имена
+файлов (`lib64Creamlinux.so`, `cream.sh`, `cream_api.ini`) сохранены для
+совместимости с существующими параметрами запуска и установщиком.
 
 После того как 20PercentRendered заархивировал оригинальный репозиторий, я решил форкнуть проект и поддерживать его по мере возможностей.
 
 **English version: [README.md](README.md)**
 
 ## Наш вклад (отличия от апстрима)
-Этот форк (gongarn/creamlinux) добавляет поверх anticitizn/creamlinux следующее:
+CreamFrame (на базе gongarn/creamlinux) добавляет поверх anticitizn/creamlinux следующее:
 
 - **Поддержка современных интерфейсов Steam SDK** — SteamApps v009, SteamUser
   v022/v023, SteamClient v021-v023 (апстрим перехватывал только v008/v021/v017-019,
@@ -57,7 +63,7 @@ Creamlinux *должен* работать с большинством Steam-и�
 - European Truck Simulator / American Truck Simulator
 
 ## Установка
-Самый простой способ — приложение **Tickbase**: https://github.com/Novattz/creamlinux-installer
+Самый простой способ — приложение **Tickbase**: https://github.com/mitch030504/creamframe-installer
 Оно автоматически скачивает и настраивает creamlinux для выбранных Steam-игр, а также подбирает все ID DLC. Помните: вам всё равно понадобятся актуальные **файлы DLC** в папке игры. Установщик и creamlinux **не** скачивают контент автоматически. Запускать установщик нужно заново при выходе новых DLC.
 
 Альтернатива — встроенный помощник установки (Python 3, без зависимостей):
@@ -83,7 +89,7 @@ python3 tools/setup.py --dir /путь/к/игре
 
 ## Ручная установка
 0. Вам понадобятся актуальные **файлы DLC** в папке игры. Creamlinux **не** скачивает ничего автоматически
-1. Скачайте [последний релиз](https://github.com/gongarn/creamlinux/releases/latest/download/creamlinux.zip)
+1. Скачайте [последний релиз](https://github.com/mitch030504/creamframe/releases/latest/download/creamframe.zip)
 2. Распакуйте и скопируйте файлы в папку игры
 3. В настройках запуска игры в Steam укажите `sh ./cream.sh %command%`
 4. Запускайте игру!
@@ -130,7 +136,7 @@ Steam Store с живым логом.
 
 1. Клонируйте проект:
 ```
-git clone https://github.com/gongarn/creamlinux
+git clone https://github.com/mitch030504/creamframe
 ```
 2. Соберите:
 ```
@@ -182,7 +188,7 @@ Creamlinux создан специально для нативных Linux-иг�
 некоторым пользователям; учтите, что в Wine/Proton нужно установить .NetCore3.
 
 ## Ничего не помогло!
-Соберите лог по инструкции ниже, а также список папки игры через `ls -lh; ls -lh */`, и создайте issue с описанием [здесь](https://github.com/anticitizn/creamlinux/issues/new).
+Соберите лог по инструкции ниже, а также список папки игры через `ls -lh; ls -lh */`, и создайте issue с описанием [здесь](https://github.com/mitch030504/creamframe/issues/new).
 
 ## Сбор логов
 В KDE укажите в launch options:
@@ -215,7 +221,7 @@ CREAM_CONFIG_PATH=/home/user/creamlinux-config sh ./cream.sh %command%
 # Благодарности
 Многие контрибьюторы, присылавшие исправления, тестировавшие игры и обновлявшие список ID DLC :)
 
-[Novattz](https://github.com/Novattz) — за [creamlinux-installer](https://github.com/Novattz/creamlinux-installer)
+[Novattz](https://github.com/Novattz) — за оригинальный [creamlinux-installer](https://github.com/Novattz/creamlinux-installer)
 
 [Rosentti](https://github.com/Rosentti) — за создание и поддержку проекта
 

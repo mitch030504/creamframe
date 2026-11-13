@@ -51,7 +51,7 @@ and launches them; the game's APK contains `lib/arm64-v8a/libsteam_api.so`.
 1. finds the installed APK in any Steam library (including SD cards),
 2. fetches the game's DLC list from the Steam Store (or uses `--ini`),
 3. downloads the APK and patches it locally:
-   - `libsteam_api.so` becomes the creamlinux proxy,
+   - `libsteam_api.so` becomes the CreamFrame proxy,
    - the original is shipped as `libsteam_api_orig.so` and the proxy forwards
      every non-hooked Steamworks symbol to it,
    - the per-game `cream_api.ini` is appended to the proxy as a trailer,
@@ -91,7 +91,7 @@ game files. The original APK is always backed up.
 
 The proxy is a real Android shared library named `libsteam_api.so`; the original
 is renamed to `libsteam_api_orig.so`. It is built with bionic/NDK, statically
-links libc++, exports only the creamlinux hooks, and resolves non-hooked symbols
+links libc++, exports only the CreamFrame hooks, and resolves non-hooked symbols
 through `DT_NEEDED: libsteam_api_orig.so`. The DLC list is appended as:
 
 ```

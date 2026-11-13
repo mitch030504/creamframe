@@ -1,11 +1,16 @@
-# Creamlinux
-A CreamAPI clone for Linux.
+# CreamFrame
+A CreamAPI-style DLC unlocker for Linux, Steam Frame, and Android games running through Lepton.
 
-Since 20PercentRendered has archived the repo, I have decided to fork and support it as far as I can.
+CreamFrame is the maintained continuation of **creamlinux** (formerly the
+gongarn/creamlinux fork, originally by 20PercentRendered and anticitizn). The
+project was renamed to CreamFrame when Steam Frame and Android/Lepton support
+were added. Technical file names such as `lib64Creamlinux.so`, `cream.sh` and
+`cream_api.ini` are intentionally unchanged for compatibility with existing
+launch options and the installer.
 
 **Русская версия: [README.ru.md](README.ru.md)**
 
-## Steam Frame fork (this fork)
+## Steam Frame support
 This tree also targets Valve's **Steam Frame**: SteamOS on ARM64, native Linux
 games, Android games through Lepton, and Windows games through Proton.
 
@@ -43,7 +48,7 @@ anti-cheat games. See [docs/frame.md](docs/frame.md) for the full workflow and
 caveats.
 
 ## Our improvements over upstream
-This fork (gongarn/creamlinux) adds the following on top of anticitizn/creamlinux:
+CreamFrame includes the gongarn/creamlinux improvements over anticitizn/creamlinux, plus the Steam Frame work:
 
 - **Modern Steam SDK support** - SteamApps v009, SteamUser v022/v023, SteamClient
   v021-v023 (upstream only hooked v008/v021/v017-019, so recent titles like CK3
@@ -75,7 +80,7 @@ This fork (gongarn/creamlinux) adds the following on top of anticitizn/creamlinu
 - `cream_api.ini` is auto-synced from upstream every week via CI
 
 ## Support
-Creamlinux *should* work on most Steam games. It does not work with Proton or Wine - use SmokeAPI or other alternatives made specifically for Windows instead.
+CreamFrame *should* work on most Steam games. It does not work with Proton or Wine - use SmokeAPI or other alternatives made specifically for Windows instead.
 The following games have been tested and definitely confirmed to work:
 
  - Stellaris
@@ -92,7 +97,7 @@ The following games have been tested and do not currently work with creamlinux, 
 - European Truck Simulator / American Truck Simulator
 
 ## Installation
-The easiest way of installing is using **Tickbase**'s Application: https://github.com/Novattz/creamlinux-installer
+The easiest way of installing is using **Tickbase**'s Application: https://github.com/mitch030504/creamframe-installer
 It automatically downloads and sets up creamlinux for Steam games that you choose, as well as fetching all DLC IDs for it. Keep in mind that you will still need the actual, **up-to-date** DLC files in the game. The install script and creamlinux do **not** automatically download any game content. You will have to run it again if new DLCs are released for a game.
 
 Alternatively, use the bundled setup helper (Python 3, no dependencies):
@@ -115,16 +120,16 @@ It auto-detects the game type:
   reliable but needs reinstall after updates)
 - add `--update-dlc <appid>` to fetch a fresh DLC list first, `--dry-run` to preview
 
-If the script does not work for you, you can install `creamlinux` manually. Beware that you will have to manually update `cream_api.ini` to contain the DLC IDs for the games that you choose.
+If the script does not work for you, you can install CreamFrame manually. Beware that you will have to manually update `cream_api.ini` to contain the DLC IDs for the games that you choose.
 
 ## Manual Installation
-0. You will need the actual, **up-to-date** DLC files in the game. Creamlinux does **not** auto-download anything
-1. Download the [latest](https://github.com/gongarn/creamlinux/releases/latest/download/creamlinux.zip) release of Creamlinux
+0. You will need the actual, **up-to-date** DLC files in the game. CreamFrame does **not** auto-download anything
+1. Download the [latest](https://github.com/mitch030504/creamframe/releases/latest/download/creamframe.zip) release of CreamFrame
 2. Unzip it and copy the files to the game's directory
 3. Set the game's steam launch params to `sh ./cream.sh %command%`
 4. Launch the game and have fun!
 
-The list of "supported" DLCs is stored in `cream_api.ini`. If you want to test creamlinux on a new game or a new DLC has just come out, you can add more entries here manually.
+The list of "supported" DLCs is stored in `cream_api.ini`. If you want to test CreamFrame on a new game or a new DLC has just come out, you can add more entries here manually.
 
 ### Unlocking everything without a DLC list
 Set `unlockall = true` in the `[config]` section of `cream_api.ini` and every DLC
@@ -167,7 +172,7 @@ with a live log.
 
 1. Clone the project:
 ```
-git clone https://github.com/gongarn/creamlinux
+git clone https://github.com/mitch030504/creamframe
 ```
 2. Build the project:
 ```
@@ -185,7 +190,7 @@ This is normal. The DLCs should still work.
 
 ![Red triangles next to DLCs are normal](https://cdn.discordapp.com/attachments/663174968791662594/1093109044295766106/image.png)
 
-## MangoHud doesn't work with creamlinux
+## MangoHud doesn't work with CreamFrame
 Use the `mangohud` launch prefix: `sh ./cream.sh mangohud %command%`. The script detects it and sets
 `MANGOHUD=1` / `MANGOHUD_DLSYM=1` so both preloads coexist (previously they clashed: only one
 of the two would take effect).
@@ -196,15 +201,15 @@ Steam may launch the game from a different working directory, so relative paths 
 `.so` files are in the game's root directory (not a subfolder).
 
 ## DLCs don't work
-- Have you made sure to download the latest version of the DLC files? Sometimes unrelated patches or updates to the game will modify some DLC files, and creamlinux is currently somewhat sensitive to outdated files.
-- Do you have Steam installed from a flatpak? Creamlinux doesn't play nicely with it, please try a native version if possible
+- Have you made sure to download the latest version of the DLC files? Sometimes unrelated patches or updates to the game will modify some DLC files, and CreamFrame is currently somewhat sensitive to outdated files.
+- Do you have Steam installed from a flatpak? CreamFrame doesn't play nicely with it, please try a native version if possible
 - Games on a recent Steamworks SDK (e.g. Crusader Kings III, recent Paradox titles) need the
   modern interface support (SteamApps v009, SteamUser v023, SteamClient v023) included in this fork.
   If your game still shows no DLCs, make sure you are not running an old release.
 - Unity/Steamworks.NET titles (e.g. Dead Cells) call the flat API - supported since this fork.
 
-## Game not starting after enabling creamlinux
-Are you sure that the creamlinux files are at the game's root directory and not in a subfolder?
+## Game not starting after enabling CreamFrame
+Are you sure that the CreamFrame files are at the game's root directory and not in a subfolder?
 
 Try setting the executable flag of the `cream.sh` script (it should be set already, but just in case):
 ```
@@ -212,11 +217,11 @@ chmod +x cream.sh
 ```
 
 ## It doesn't work with Proton or Wine
-Creamlinux is specifically made for native Linux games. If you are using a compatibility layer, use alternatives made specifically for Windows (e.g. SmokeAPI, regular CreamAPI or whatever).
+CreamFrame is specifically made for native Linux games. If you are using a compatibility layer, use alternatives made specifically for Windows (e.g. SmokeAPI, regular CreamAPI or whatever).
 [AutoCreamAPI](https://github.com/MoebiusZero/AutoCreamAPI) has worked well for some people, keep in mind that you need to install .NetCore3 on your Wine/Proton instance first.
 
 ## Nothing helped!
-Please collect a log using the instructions below as well as an overview of the game's directory using `ls -lh; ls -lh */`, then post an issue describing your situation [here](https://github.com/anticitizn/creamlinux/issues/new).
+Please collect a log using the instructions below as well as an overview of the game's directory using `ls -lh; ls -lh */`, then post an issue describing your situation [here](https://github.com/mitch030504/creamframe/issues/new).
 
 ## Gathering logs
 If using a KDE environment, set your game launch options to this:
@@ -237,7 +242,7 @@ CREAM_CONFIG_PATH=/home/user/creamlinux-config sh ./cream.sh %command%
 ```
 
 # Alternatives
-If creamlinux doesn't work for your game, there are a couple of known alternatives for Linux. I provide no guarantees for their legitimacy and functionality, but some people seem to be happy with them.
+If CreamFrame doesn't work for your game, there are a couple of known alternatives for Linux. I provide no guarantees for their legitimacy and functionality, but some people seem to be happy with them.
 - [StellarKey](https://0xacab.org/stellarkey/stellarkey)
 - [CreamAPI (Windows, MacOS, Linux)](https://cs.rin.ru/forum/viewtopic.php?f=29&t=70576)
 - [AutoCreamAPI for Proton](https://github.com/MoebiusZero/AutoCreamAPI) (.NetCore3 required)
@@ -245,7 +250,7 @@ If creamlinux doesn't work for your game, there are a couple of known alternativ
 # Credits
 The many contributors who submitted bugfixes, tested games and updated the list of DLC IDs :)
 
-[Novattz](https://github.com/Novattz) for [creamlinux-installer](https://github.com/Novattz/creamlinux-installer)
+[Novattz](https://github.com/Novattz) for [creamlinux-installer](https://github.com/mitch030504/creamframe-installer)
 
 [Rosentti](https://github.com/Rosentti) for originally creating and maintaining this project
 

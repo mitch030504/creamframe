@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-gui.py - web UI for creamlinux tools.
+gui.py - web UI for CreamFrame tools.
 
 Serves a local web app on http://127.0.0.1:8765 (no domain, no internet
 required - everything runs on your machine). Uses the shared creamlib core.
@@ -156,7 +156,7 @@ def api_install(handler, body):
             if game["game_type"] == "native":
                 dist = creamlib.find_creamlinux_dist()
                 if dist is None:
-                    log_line("error: no local creamlinux build found; "
+                    log_line("error: no local CreamFrame build found; "
                              "run 'sh ./build.sh' first")
                     continue
                 creamlib.install_native(game["game_dir"], dist, dry_run,
@@ -374,7 +374,7 @@ def main():
 
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     url = f"http://127.0.0.1:{args.port}"
-    print(f"creamlinux web UI: {url}  (Ctrl+C to stop)")
+    print(f"CreamFrame web UI: {url}  (Ctrl+C to stop)")
     if not args.no_browser:
         threading.Timer(0.5, lambda: webbrowser.open(url)).start()
     try:

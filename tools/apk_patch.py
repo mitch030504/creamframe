@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Patch a Steam Frame Android APK with the creamlinux libsteam_api proxy.
+"""Patch a Steam Frame Android APK with the CreamFrame libsteam_api proxy.
 
 The APK's lib/arm64-v8a/libsteam_api.so is replaced by the proxy and the
 original is shipped as libsteam_api_orig.so. The proxy reads its DLC list from
@@ -126,7 +126,7 @@ def ensure_keystore(keystore: str, password_file: str) -> None:
         "-keystore", str(ks), "-alias", "cream",
         "-keyalg", "RSA", "-keysize", "4096", "-validity", "10000",
         "-storepass", password, "-keypass", password,
-        "-dname", "CN=CreamLinux Android",
+        "-dname", "CN=CreamFrame Android",
     ])
     os.chmod(ks, 0o600)
 
