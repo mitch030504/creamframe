@@ -545,7 +545,10 @@ def cmd_android_reset(args):
     baked = os.path.join(game["compatdata"], "baked")
     lepton = "/home/steamos/.local/share/Steam/steamapps/common/Lepton/lepton"
     context = f"steamlaunch-{game['appid']}"
-    running = ssh(args.remote, f"{quote(lepton)} ps 2>/dev/null | grep -q {quote(context)}")
+    container = "lepton-" + context
+    running = ssh(args.remote,
+                  "podman ps --format '{{.Names}}' 2>/dev/null | "
+                  f"grep -q {quote(container)}")
     if running.returncode == 0:
         raise SystemExit(f"{context} is running; close the game before resetting")
     if args.dry_run:
