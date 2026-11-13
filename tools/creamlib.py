@@ -52,20 +52,24 @@ def latest_release_asset(repo):
 
 # -------------------------------------------------------------- detection --
 
-def find_steam_api_files(game_dir, max_depth=3):
+def find_steam_api_files(game_dir, max_depth=6):
     """Find libsteam_api.so / steam_api*.dll inside a game folder.
     Returns ('native', path) or ('proton', path) or (None, None).
 
     A libsteam_api.so wins over any steam_api*.dll: some native games
     (e.g. Paradox titles like CK3) ship stray Windows DLLs in the same
-    folder, and only the .so proves a native Linux build."""
+    folder, and only the .so proves a native Linux build.
+
+    Unity puts the Windows Steam API dll in
+    <Game>_Data/Plugins/x86_64 (depth 3), so the scan must include files at
+    max_depth, not stop just before them (Beat Saber regression)."""
     root_depth = game_dir.rstrip(os.sep).count(os.sep)
     proton_path = None
     for dirpath, dirnames, filenames in os.walk(game_dir):
         dirnames.sort()
         filenames.sort()
         depth = dirpath.rstrip(os.sep).count(os.sep) - root_depth
-        if depth >= max_depth:
+        if depth > max_depth:
             dirnames[:] = []
             continue
         for fname in filenames:
@@ -74,7 +78,7 @@ def find_steam_api_files(game_dir, max_depth=3):
             if (fname in ("steam_api.dll", "steam_api64.dll")
                     and proton_path is None):
                 proton_path = os.path.join(dirpath, fname)
-        if depth >= max_depth - 1:
+        if depth >= max_depth:
             dirnames[:] = []
     if proton_path is not None:
         return "proton", proton_path
@@ -270,8 +274,14 @@ def install_proton(game_dir, cache_dir=None, dry_run=False, verbose=False,
                      os.path.join(game_dir, "cream_api.ini"))
         log(f"copied cream_api.ini (from {dist})")
     else:
-        log("warning: no local cream_api.ini found; copy one manually "
-            "into the game folder")
+        ini_path = os.path.join(game_dir, "cream_api.ini")
+        if not os.path.exists(ini_path):
+            with open(ini_path, "w", encoding="utf-8") as fh:
+                fh.write("[config]\nunlockall = false\n\n[dlc]\n")
+            log(f"created an empty {ini_path}; add DLC ids or use "
+                "tools/update-dlc.py")
+        else:
+            log(f"kept existing {ini_path}")
     return 0
 
 

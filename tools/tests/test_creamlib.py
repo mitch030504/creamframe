@@ -110,9 +110,12 @@ class TestScan(unittest.TestCase):
         deep = os.path.join(root, "a", "b", "c")
         os.makedirs(deep)
         open(os.path.join(deep, "libsteam_api.so"), "w").close()
-        self.assertEqual(creamlib.find_steam_api_files(root, max_depth=3),
+        # max_depth is inclusive: a file at depth 3 is found with
+        # max_depth=3 (Unity puts steam_api64.dll at
+        # <Game>_Data/Plugins/x86_64, which is depth 3).
+        self.assertEqual(creamlib.find_steam_api_files(root, max_depth=2),
                          (None, None))
-        self.assertEqual(creamlib.find_steam_api_files(root, max_depth=4),
+        self.assertEqual(creamlib.find_steam_api_files(root, max_depth=3),
                          ("native", os.path.join(deep, "libsteam_api.so")))
 
     def test_check_dlc_files_game_subdir(self):

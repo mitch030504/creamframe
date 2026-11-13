@@ -6,3 +6,7 @@ output
 .idea
 cmake-build-debug/
 tools/__pycache__/
+
+dist/
+__pycache__/
+*.pyc

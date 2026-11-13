@@ -61,21 +61,99 @@ CREAM_TMPDIR=$(mktemp -d "${TMPDIR:-/tmp}/creamlinux.XXXXXX") || {
 }
 trap 'rm -rf "$CREAM_TMPDIR"' EXIT
 
-copy_file "$PWD/lib32Creamlinux.so" "$CREAM_TMPDIR/lib32Creamlinux.so"
-copy_file "$PWD/lib64Creamlinux.so" "$CREAM_TMPDIR/lib64Creamlinux.so"
 copy_file "$LIBSTEAM_API_DIR/libsteam_api.so" "$CREAM_TMPDIR/libsteam_api.so"
 
-# Preload only the creamlinux library matching the game's bitness; ld.so
-# would otherwise log 'wrong ELF class' noise for the other one (issue #71).
-# ELF class byte at offset 4: 01 = 32-bit (ELFCLASS32), 02 = 64-bit (ELFCLASS64).
-ELF_CLASS=$(od -An -t x1 -j 4 -N 1 "$CREAM_TMPDIR/libsteam_api.so" 2>/dev/null | tr -d ' \n')
-case "$ELF_CLASS" in
-    01) PRELOAD_LIBS="$CREAM_TMPDIR/lib32Creamlinux.so" ;;
-    02) PRELOAD_LIBS="$CREAM_TMPDIR/lib64Creamlinux.so" ;;
-    *)  PRELOAD_LIBS="$CREAM_TMPDIR/lib64Creamlinux.so $CREAM_TMPDIR/lib32Creamlinux.so" ;; # unknown: both
+# Select the creamlinux library that matches the game's architecture, not the
+# host's. Steam Frame runs x86-64 games through FEX on an aarch64 host, and a
+# distribution can contain both aarch64 and x86-64 builds.
+#
+# e_machine is the little-endian 16-bit field at offset 18:
+#   0x3e = x86-64, 0x03 = i386, 0xb7 = aarch64, 0x28 = arm
+elf_machine() {
+    od -An -t x1 -j 18 -N 2 "$1" 2>/dev/null | tr -d ' \n'
+}
+
+GAME_MACHINE=$(elf_machine "$CREAM_TMPDIR/libsteam_api.so")
+case "$GAME_MACHINE" in
+    3e00) GAME_ARCH=x86_64 ;;
+    0300) GAME_ARCH=i386 ;;
+    b700) GAME_ARCH=aarch64 ;;
+    2800) GAME_ARCH=arm ;;
+    *)    GAME_ARCH=unknown ;;
 esac
 
-LD_PRELOAD="$LD_PRELOAD $PRELOAD_LIBS $CREAM_TMPDIR/libsteam_api.so" "$@"
+pick_lib() {
+    local arch="$1"
+    local candidate
+    for candidate in \
+        "$arch/lib64Creamlinux.so" \
+        "$arch/lib32Creamlinux.so" \
+        "lib64Creamlinux.so" \
+        "lib32Creamlinux.so"; do
+        [ -f "$candidate" ] || continue
+        if [ "$(elf_machine "$candidate")" = "$GAME_MACHINE" ]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+CREAM_LIB=""
+case "$GAME_ARCH" in
+    x86_64)
+        CREAM_LIB=$(pick_lib x86_64) || true
+        LIB_NAME=lib64Creamlinux.so
+        ;;
+    i386)
+        CREAM_LIB=$(pick_lib i386) || true
+        LIB_NAME=lib32Creamlinux.so
+        ;;
+    aarch64)
+        CREAM_LIB=$(pick_lib aarch64) || true
+        LIB_NAME=lib64Creamlinux.so
+        ;;
+    arm)
+        CREAM_LIB=$(pick_lib arm) || true
+        LIB_NAME=lib32Creamlinux.so
+        ;;
+    *)
+        # Unknown machine: preserve the old behaviour and preload both
+        # libraries if they exist. ld.so will ignore the wrong ELF class.
+        CREAM_LIB=""
+        LIB_NAME=""
+        ;;
+esac
+
+if [ -z "$CREAM_LIB" ] && [ "$GAME_ARCH" != unknown ]; then
+    echo "Error: no creamlinux library matches the game architecture ($GAME_ARCH)." >&2
+    echo "Put an aarch64/x86_64 build in the game folder (or in $GAME_ARCH/)." >&2
+    exit 1
+fi
+
+if [ "$(uname -m)" = aarch64 ] && [ "$GAME_ARCH" = x86_64 ]; then
+    echo "cream.sh: x86-64 game on an ARM host (Steam Frame/FEX)." >&2
+    echo "cream.sh: FEX removes LD_PRELOAD, so this launch will not be patched." >&2
+    echo "cream.sh: use SmokeAPI for Windows/Proton games instead." >&2
+fi
+
+if [ -n "$CREAM_LIB" ]; then
+    copy_file "$CREAM_LIB" "$CREAM_TMPDIR/$LIB_NAME"
+    PRELOAD_LIBS="$CREAM_TMPDIR/$LIB_NAME"
+else
+    # Unknown architecture fallback: copy whichever libraries exist.
+    PRELOAD_LIBS=""
+    if [ -f lib64Creamlinux.so ]; then
+        copy_file lib64Creamlinux.so "$CREAM_TMPDIR/lib64Creamlinux.so"
+        PRELOAD_LIBS="$CREAM_TMPDIR/lib64Creamlinux.so"
+    fi
+    if [ -f lib32Creamlinux.so ]; then
+        copy_file lib32Creamlinux.so "$CREAM_TMPDIR/lib32Creamlinux.so"
+        PRELOAD_LIBS="$PRELOAD_LIBS $CREAM_TMPDIR/lib32Creamlinux.so"
+    fi
+fi
+
+LD_PRELOAD="${LD_PRELOAD:+$LD_PRELOAD }$PRELOAD_LIBS $CREAM_TMPDIR/libsteam_api.so" "$@"
 EXITCODE=$?
 rm -rf "$CREAM_TMPDIR"
 exit $EXITCODE
