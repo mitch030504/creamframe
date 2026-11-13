@@ -18,9 +18,7 @@ import shlex
 import shutil
 import subprocess
 import sys
-import textwrap
 import urllib.request
-import zipfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
